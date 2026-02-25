@@ -6,10 +6,20 @@ from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 # Initialize NLTK resources
 import nltk
-nltk.download('punkt', quiet=True)
-nltk.download('averaged_perceptron_tagger_eng', quiet=True)
-nltk.download('wordnet', quiet=True)
-nltk.download('stopwords', quiet=True)
+
+def _safe_nltk_download(pkg):
+    try:
+        nltk.data.find(pkg)
+    except LookupError:
+        try:
+            nltk.download(pkg.split('/')[-1], quiet=True, raise_on_error=False)
+        except Exception:
+            pass
+
+_safe_nltk_download('tokenizers/punkt')
+_safe_nltk_download('taggers/averaged_perceptron_tagger_eng')
+_safe_nltk_download('corpora/wordnet')
+_safe_nltk_download('corpora/stopwords')
 
 class QuestionEnhancer:
     def __init__(self):

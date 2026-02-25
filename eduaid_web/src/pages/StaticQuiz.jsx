@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../index.css";
-import logoPNG from "../assets/aossie_logo_transparent.png";
-import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
@@ -206,39 +204,26 @@ const Output = () => {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex flex-col h-full">
-          {/* Header - Responsive logo and title */}
-          <Link to="/">
-            <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
-              />
-              <div className="text-xl sm:text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
-            </div>
-          </Link>
+    <div className="min-h-screen bg-[#02000F] text-white">
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#7600F2] opacity-[0.10] blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[350px] h-[350px] rounded-full bg-[#00CBE7] opacity-[0.08] blur-[100px]" />
+      </div>
+      <div className="relative z-10 flex flex-col min-h-screen pt-24 pb-10">
+        <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full px-2 sm:px-4">
 
           {/* Title and Shuffle Button */}
-          <div className="flex justify-between items-center mt-3 mx-4 sm:mx-6">
-            <div className="font-bold text-lg sm:text-xl text-white">
+          <div className="flex justify-between items-center mb-6">
+            <div className="font-bold text-2xl sm:text-3xl bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
               Generated Questions
             </div>
             <button
               className={`${
                 editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+                  ? 'bg-white/10 cursor-not-allowed text-white/40'
+                  : 'bg-[#7600F2] hover:bg-[#6000d0] text-white'
+              } px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 border border-white/10`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
             >
@@ -257,7 +242,7 @@ const Output = () => {
                 return (
                   <div
                     key={index}
-                    className="px-3 sm:px-4 bg-[#d9d9d90d] border-black border my-2 sm:my-3 mx-1 sm:mx-2 rounded-xl py-3 sm:py-4"
+                    className="px-4 sm:px-5 bg-white/[0.03] border border-white/[0.07] my-3 rounded-2xl py-4 sm:py-5 hover:bg-white/[0.05] transition-colors"
                   >
                     <div className="flex justify-between items-center mb-2">
                       <div className="text-[#E4E4E4] text-xs sm:text-sm">
@@ -424,3 +409,4 @@ const Output = () => {
 
 
 export default Output;
+

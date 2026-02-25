@@ -8,8 +8,17 @@ import glob
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-nltk.download("stopwords")
-nltk.download('punkt_tab')
+def _safe_nltk_download(pkg):
+    try:
+        nltk.data.find(pkg)
+    except LookupError:
+        try:
+            nltk.download(pkg, quiet=True, raise_on_error=False)
+        except Exception:
+            pass
+
+_safe_nltk_download('corpora/stopwords')
+_safe_nltk_download('tokenizers/punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
 import re
@@ -38,7 +47,11 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+try:
+    docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+except Exception as e:
+    print(f"Warning: GoogleDocsService unavailable (invalid service account key): {e}")
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -187,7 +200,7 @@ def get_content():
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
 
-        text = docs_service.get_document_content(document_url)
+        text = docs_service.get_document_content(document_url) if docs_service else (_ for _ in ()).throw(Exception("Google Docs service is not configured. Please provide a valid service account key."))
         return jsonify(text)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -421,19 +434,36 @@ def get_boolq_hard():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    # Debug logging to help diagnose upload issues
+    try:
+        print("/upload called. request.files keys:", list(request.files.keys()))
+    except Exception as e:
+        print("Could not read request.files:", e)
+
     if 'file' not in request.files:
+        print("Upload error: no 'file' in request.files")
         return jsonify({"error": "No file part"}), 400
 
     file = request.files['file']
+    print(f"Received file object: filename={getattr(file, 'filename', None)}, content_type={getattr(file, 'content_type', None)}")
 
     if file.filename == '':
+        print("Upload error: empty filename")
         return jsonify({"error": "No selected file"}), 400
 
-    content = file_processor.process_file(file)
-    
+    try:
+        content = file_processor.process_file(file)
+    except Exception as e:
+        # Log exception and return useful JSON for debugging
+        print("Exception while processing file:")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Exception processing file", "detail": str(e)}), 500
+
     if content:
         return jsonify({"content": content})
     else:
+        print("File processing returned no content or unsupported type")
         return jsonify({"error": "Unsupported file type or error processing file"}), 400
 
 @app.route("/", methods=["GET"])
