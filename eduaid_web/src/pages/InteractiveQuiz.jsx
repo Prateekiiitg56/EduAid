@@ -2,10 +2,17 @@
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import logo from "../assets/aossie_logo_transparent.png";
 
-const InteractiveQuiz = () => {
+const InteractiveQuiz = ({ questions: questionsProp }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { questions = [] } = location.state || {};
+  // Accept questions from props (via QuizModeWrapper) or fall back to location.state
+  const rawQuestions = questionsProp || (location.state && location.state.questions) || [];
+  // Handle both plain array and {output: [...]} wrapper from backend
+  const questions = Array.isArray(rawQuestions)
+    ? rawQuestions
+    : Array.isArray(rawQuestions.output)
+      ? rawQuestions.output
+      : [];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState(null);

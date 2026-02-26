@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../index.css";
+import { Link } from "react-router-dom";
+import logoPNG from "../assets/aossie_logo_transparent.png";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
-const Output = () => {
+const Output = ({ questions: questionsProp }) => {
   const [qaPairs, setQaPairs] = useState([]);
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
@@ -89,14 +91,47 @@ const Output = () => {
   };
 
   useEffect(() => {
+    // If questions were passed via props (from QuizModeWrapper), use them directly
+    if (questionsProp && questionsProp.length > 0) {
+      // Normalize each question object for consistent rendering
+      const normalized = questionsProp.map((q) => {
+        // MCQ format from backend: { question_statement, options, answer, context }
+        if (q.question_statement) {
+          return {
+            question: q.question_statement,
+            question_type: "MCQ",
+            options: q.options || [],
+            answer: q.answer,
+            context: q.context,
+          };
+        }
+        // Boolean format: plain string
+        if (typeof q === "string") {
+          return { question: q, question_type: "Boolean" };
+        }
+        // Already normalized or short-answer
+        return {
+          question: q.question || q.Question || q.question_statement || "",
+          question_type: q.question_type || "Short",
+          options: q.options || [],
+          answer: q.answer || q.Answer || "",
+          context: q.context || "",
+        };
+      });
+      setQaPairs(normalized);
+      return;
+    }
+
+    // Fallback: load from localStorage (e.g. page refresh)
     const qaPairsFromStorage =
       JSON.parse(localStorage.getItem("qaPairs")) || {};
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
 
+      // "All types" response has output_boolq, output_mcq, output_shortq
       if (qaPairsFromStorage["output_boolq"]) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+          (question) => {
             combinedQaPairs.push({
               question,
               question_type: "Boolean",
@@ -118,30 +153,10 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (qaPairsFromStorage["output_shortq"]) {
+        (qaPairsFromStorage["output_shortq"]["questions"] || []).forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
+            question: qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
@@ -150,9 +165,43 @@ const Output = () => {
         });
       }
 
+      // Single-type response has just "output" key
+      if (qaPairsFromStorage["output"] && !qaPairsFromStorage["output_mcq"]) {
+        if (questionType === "get_mcq" || questionType === "get_mcq_hard") {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            combinedQaPairs.push({
+              question: qaPair.question_statement,
+              question_type: "MCQ",
+              options: qaPair.options,
+              answer: qaPair.answer,
+              context: qaPair.context,
+            });
+          });
+        } else if (questionType === "get_boolq" || questionType === "get_boolq_hard") {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            const text = typeof qaPair === "string" ? qaPair : qaPair.question || qaPair.Question;
+            combinedQaPairs.push({
+              question: text,
+              question_type: "Boolean",
+            });
+          });
+        } else {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            combinedQaPairs.push({
+              question:
+                qaPair.question || qaPair.question_statement || qaPair.Question,
+              options: qaPair.options,
+              answer: qaPair.answer || qaPair.Answer,
+              context: qaPair.context,
+              question_type: "Short",
+            });
+          });
+        }
+      }
+
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionsProp]);
 
   const generateGoogleForm = async () => {
     try {
@@ -202,6 +251,27 @@ const Output = () => {
       worker.terminate();
     };
   };
+
+  if (qaPairs.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#02000F] flex items-center justify-center text-white">
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#7600F2] opacity-[0.10] blur-[100px]" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[350px] h-[350px] rounded-full bg-[#00CBE7] opacity-[0.08] blur-[100px]" />
+        </div>
+        <div className="relative z-10 text-center p-10 rounded-2xl bg-white/[0.04] border border-white/[0.08] max-w-md">
+          <div className="text-5xl mb-4">📝</div>
+          <h2 className="text-2xl font-bold mb-3">No Questions Yet</h2>
+          <p className="text-[#718096] mb-6">Generate a quiz first to see your questions here.</p>
+          <Link to="/upload">
+            <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white font-bold hover:scale-105 transition-all">
+              Generate a Quiz →
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#02000F] text-white">

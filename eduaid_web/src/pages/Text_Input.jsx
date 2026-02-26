@@ -86,6 +86,73 @@ const Text_Input = () => {
       });
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
 
+      // Extract and normalize the questions array from the backend response
+      // Backend returns different formats depending on question type:
+      // - MCQ: { output: [{ question_statement, options, answer, context }] }
+      // - BoolQ: { output: ["question string", ...] }
+      // - ShortQ: { output: [{ Question, Answer, context }] }
+      // - All: { output_mcq, output_boolq, output_shortq }
+      let questionsArray = [];
+      
+      const normalizeQuestion = (q, qType) => {
+        // Already normalized
+        if (q.question && q.question_type) return q;
+        
+        // Plain string (True/False)
+        if (typeof q === "string") {
+          return { question: q, question_type: "Boolean", options: ["True", "False"], answer: "True" };
+        }
+        
+        // MCQ format
+        if (q.question_statement) {
+          return {
+            question: q.question_statement,
+            question_type: "MCQ",
+            options: q.options || [],
+            answer: q.answer,
+            context: q.context,
+          };
+        }
+        
+        // Short Answer format (capital Q/A)
+        if (q.Question || q.Answer) {
+          return {
+            question: q.Question || q.question,
+            question_type: "Short",
+            answer: q.Answer || q.answer,
+            context: q.context,
+          };
+        }
+        
+        // Fallback
+        return {
+          question: q.question || "",
+          question_type: qType || "Short",
+          options: q.options || [],
+          answer: q.answer || "",
+          context: q.context || "",
+        };
+      };
+
+      if (Array.isArray(responseData.output)) {
+        questionsArray = responseData.output.map((q) => normalizeQuestion(q, questionType === "get_boolq" ? "Boolean" : questionType === "get_mcq" ? "MCQ" : "Short"));
+      } else if (responseData.output && responseData.output.questions) {
+        questionsArray = responseData.output.questions.map((q) => normalizeQuestion(q, "MCQ"));
+      } else if (responseData.output_mcq || responseData.output_boolq || responseData.output_shortq) {
+        // "All types" mode — combine them
+        if (responseData.output_mcq?.questions) {
+          questionsArray.push(...responseData.output_mcq.questions.map((q) => normalizeQuestion(q, "MCQ")));
+        }
+        if (responseData.output_boolq?.Boolean_Questions) {
+          responseData.output_boolq.Boolean_Questions.forEach((q) =>
+            questionsArray.push(normalizeQuestion(q, "Boolean"))
+          );
+        }
+        if (responseData.output_shortq?.questions) {
+          questionsArray.push(...responseData.output_shortq.questions.map((q) => normalizeQuestion(q, "Short")));
+        }
+      }
+
       const quizDetails = {
         difficulty, numQuestions,
         date: new Date().toLocaleDateString(),
@@ -97,7 +164,7 @@ const Text_Input = () => {
       if (last5.length > 5) last5.shift();
       localStorage.setItem("last5Quizzes", JSON.stringify(last5));
 
-      navigate("/quiz", { state: { mode: quizMode, questions: responseData } });
+      navigate("/quiz", { state: { mode: quizMode, questions: questionsArray } });
     } catch (err) {
       console.error("Error:", err);
     } finally {

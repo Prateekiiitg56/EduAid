@@ -8,10 +8,10 @@ const QuizModeWrapper = () => {
   const { mode, questions } = location.state || { mode: 'static', questions: [] };
 
   if (mode === 'interactive') {
-    return <InteractiveQuiz />;
+    return <InteractiveQuiz questions={questions} />;
   }
 
-  return <StaticQuiz />;
+  return <StaticQuiz questions={questions} />;
 };
 
 export default QuizModeWrapper;
