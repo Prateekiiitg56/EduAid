@@ -29,9 +29,14 @@ from mediawikiapi import MediaWikiAPI
 app = Flask(__name__)
 
 # Security: Configure CORS with restricted origins
+# Override in production via ALLOWED_ORIGINS env var (comma-separated)
+_default_origins = ["http://localhost:3000", "http://localhost:19222"]
+_origins_env = os.environ.get("ALLOWED_ORIGINS", "").strip()
+allowed_origins = [o.strip() for o in _origins_env.split(",") if o.strip()] if _origins_env else _default_origins
+
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:19222"],
+        "origins": allowed_origins,
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "max_age": 3600
@@ -959,6 +964,10 @@ def get_transcript():
                  f"https://www.youtube.com/watch?v={video_id}"],
                 check=True, capture_output=True, text=True, timeout=60
             )
+            if result.stdout:
+                logger.debug(f"yt-dlp stdout: {result.stdout[:500]}")
+            if result.stderr:
+                logger.debug(f"yt-dlp stderr: {result.stderr[:500]}")
         except subprocess.TimeoutExpired:
             logger.error(f"Transcript download timed out for video: {video_id}")
             return jsonify({"error": "Transcript download timed out"}), 504

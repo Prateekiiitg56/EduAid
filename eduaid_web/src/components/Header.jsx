@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../index.css";
 import logo from "../assets/aossie_logo_transparent.png";
@@ -12,6 +12,28 @@ const navLinks = [
 const Header = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [open]);
 
   const isActive = (path) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -46,10 +68,8 @@ const Header = () => {
 
         {/* Desktop CTA */}
         <div className="hidden md:block">
-          <Link to="/upload">
-            <button className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white text-sm font-bold hover:shadow-[0_0_20px_rgba(118,0,242,0.5)] transition-all duration-300 hover:scale-105">
-              Generate Quiz 
-            </button>
+          <Link to="/upload" className="inline-block px-5 py-2 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white text-sm font-bold hover:shadow-[0_0_20px_rgba(118,0,242,0.5)] transition-all duration-300 hover:scale-105">
+            Generate Quiz 
           </Link>
         </div>
 
@@ -67,7 +87,7 @@ const Header = () => {
       </nav>
 
       {/* Mobile Menu */}
-      <div className={`md:hidden transition-all duration-300 overflow-hidden ${open ? "max-h-64 opacity-100 mt-2" : "max-h-0 opacity-0"}`}>
+      <div ref={menuRef} className={`md:hidden transition-all duration-300 overflow-hidden ${open ? "max-h-64 opacity-100 mt-2" : "max-h-0 opacity-0"}`}>
         <div className="mx-4 rounded-2xl bg-[#02000F]/90 backdrop-blur-xl border border-white/[0.08] p-4 flex flex-col gap-2">
           {navLinks.map(({ to, label }) => (
             <Link
@@ -83,10 +103,8 @@ const Header = () => {
               {label}
             </Link>
           ))}
-          <Link to="/upload" onClick={() => setOpen(false)}>
-            <button className="w-full mt-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white text-sm font-bold">
-              Generate Quiz 
-            </button>
+          <Link to="/upload" onClick={() => setOpen(false)} className="block w-full mt-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white text-sm font-bold text-center">
+            Generate Quiz 
           </Link>
         </div>
       </div>

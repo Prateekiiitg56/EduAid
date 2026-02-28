@@ -125,11 +125,20 @@ def filter_useful_phrases(phrase_keys, max_count, normalized_levenshtein, thresh
                 break
     return filtered_phrases
 
+# Lazy-loaded spaCy model cache for noun phrase extraction
+_spacy_nlp = None
+
+def _get_spacy_nlp():
+    global _spacy_nlp
+    if _spacy_nlp is None:
+        _spacy_nlp = spacy.load('en_core_web_sm')
+    return _spacy_nlp
+
 def extract_noun_phrases(text):
     """Extract noun phrases using spaCy instead of pke"""
     out = []
     try:
-        nlp = spacy.load('en_core_web_sm')
+        nlp = _get_spacy_nlp()
         doc = nlp(text)
         # Extract noun phrases (multi-word nouns and proper nouns)
         for chunk in doc.noun_chunks:
