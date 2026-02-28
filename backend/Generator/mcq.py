@@ -57,29 +57,31 @@ def find_similar_words(word, s2v_model):
 def get_answer_choices(answer, s2v_model):
     choices = []
 
+    source = "sense2vec"
     try:
         choices = find_similar_words(answer, s2v_model)
         if len(choices) > 0:
             print("Generated choices successfully for word:", answer)
-            return choices, "sense2vec"
+            return choices, source
     except Exception as e:
         print(f"Failed to generate choices for word: {answer}. Error: {e}")
     
     # Fallback: if sense2vec fails, generate generic distractors
     if len(choices) < 3:
+        source = "fallback"
         print(f"sense2vec returned {len(choices)} choices for '{answer}', adding generic fallbacks")
         fallbacks = [
             f"Not {answer}",
-            f"None of the above",
-            f"Incorrect option",
-            f"Another answer",
-            f"Different response"
+            "None of the above",
+            "Incorrect option",
+            "Another answer",
+            "Different response"
         ]
         for fb in fallbacks:
             if fb not in choices and len(choices) < 10:
                 choices.append(fb)
 
-    return choices, "sense2vec" if len(choices) >= 3 else "fallback"
+    return choices, source
 
 def tokenize_into_sentences(text):
     sentences = [sent_tokenize(text)]

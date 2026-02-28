@@ -474,9 +474,9 @@ def get_boolean_answer():
                     continue
                 
                 qa_response = answer.predict_boolean_answer(
-                    {"input_text": input_text, "input_question": question}
+                    {"input_text": input_text, "input_question": [question]}
                 )
-                output.append("True" if qa_response else "False")
+                output.append("True" if qa_response and qa_response[0] else "False")
             except Exception as e:
                 logger.error(f"Error predicting boolean answer: {e}")
                 output.append("False")
@@ -814,16 +814,16 @@ def get_mcq_hard():
 def get_boolq_hard():
     """Generate harder boolean questions with validation."""
     try:
-        if not qg:
-            return jsonify({"error": "Question Generator not available"}), 503
+        if not BoolQGen:
+            return jsonify({"error": "Boolean Generator not available"}), 503
         
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON provided"}), 400
         
         input_text = data.get("input_text", "")
+        max_questions = validate_max_questions(data.get("max_questions", 4))
         use_mediawiki = data.get("use_mediawiki", 0)
-        input_questions = data.get("input_question", [])
         
         try:
             input_text = validate_input(input_text)
@@ -832,20 +832,17 @@ def get_boolq_hard():
 
         input_text = process_input_text(input_text, use_mediawiki)
 
-        generated = qg.generate(
-            article=input_text,
-            num_questions=input_questions,
-            answer_style="true_false"
-        )
+        output = BoolQGen.generate_boolq({
+            "input_text": input_text,
+            "max_questions": max_questions
+        })
+
+        generated = output.get("Boolean_Questions", [])
 
         harder_questions = []
         for q in generated:
             try:
-                if isinstance(q, dict):
-                    q["question"] = make_question_harder(q["question"])
-                    harder_questions.append(q)
-                else:
-                    harder_questions.append(make_question_harder(q))
+                harder_questions.append(make_question_harder(q))
             except Exception as e:
                 logger.warning(f"Failed to make question harder: {e}")
                 harder_questions.append(q)
@@ -864,7 +861,8 @@ def upload_file():
     try:
         # File size limit: 10MB
         MAX_FILE_SIZE = 10 * 1024 * 1024
-        ALLOWED_EXTENSIONS = {'pdf', 'txt', 'docx', 'doc'}
+        # Supported formats must match FileProcessor extraction pipeline
+        ALLOWED_EXTENSIONS = {'pdf', 'txt', 'docx'}
         
         if 'file' not in request.files:
             logger.warning("Upload attempt with no file part")
