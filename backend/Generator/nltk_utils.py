@@ -11,6 +11,8 @@ def safe_nltk_download(pkg):
         nltk.data.find(pkg)
     except LookupError:
         try:
-            nltk.download(pkg.split('/')[-1], quiet=True, raise_on_error=False)
+            success = nltk.download(pkg.split('/')[-1], quiet=True, raise_on_error=False)
+            if not success:
+                logger.warning("NLTK resource '%s' download returned False — resource may be unavailable", pkg)
         except Exception as e:
             logger.warning("Failed to download NLTK resource '%s': %s", pkg, e)

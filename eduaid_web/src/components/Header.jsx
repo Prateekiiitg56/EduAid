@@ -36,7 +36,7 @@ const Header = () => {
   }, [open]);
 
   const isActive = (path) =>
-    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+    path === "/" ? location.pathname === "/" : location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
@@ -78,6 +78,7 @@ const Header = () => {
           onClick={() => setOpen(!open)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
+          aria-controls="mobile-menu"
           className="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5"
         >
           <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${open ? "rotate-45 translate-y-2" : ""}`} />
@@ -87,27 +88,29 @@ const Header = () => {
       </nav>
 
       {/* Mobile Menu */}
-      <div ref={menuRef} className={`md:hidden transition-all duration-300 overflow-hidden ${open ? "max-h-64 opacity-100 mt-2" : "max-h-0 opacity-0"}`}>
-        <div className="mx-4 rounded-2xl bg-[#02000F]/90 backdrop-blur-xl border border-white/[0.08] p-4 flex flex-col gap-2">
-          {navLinks.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              onClick={() => setOpen(false)}
-              className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                isActive(to)
-                  ? "bg-[#7600F2]/20 text-[#c084fc]"
-                  : "text-[#a0aec0] hover:text-white hover:bg-white/[0.06]"
-              }`}
-            >
-              {label}
+      {open && (
+        <div ref={menuRef} id="mobile-menu" className="md:hidden transition-all duration-300 overflow-hidden max-h-64 opacity-100 mt-2">
+          <div className="mx-4 rounded-2xl bg-[#02000F]/90 backdrop-blur-xl border border-white/[0.08] p-4 flex flex-col gap-2">
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setOpen(false)}
+                className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                  isActive(to)
+                    ? "bg-[#7600F2]/20 text-[#c084fc]"
+                    : "text-[#a0aec0] hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+            <Link to="/upload" onClick={() => setOpen(false)} className="block w-full mt-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white text-sm font-bold text-center">
+              Generate Quiz 
             </Link>
-          ))}
-          <Link to="/upload" onClick={() => setOpen(false)} className="block w-full mt-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white text-sm font-bold text-center">
-            Generate Quiz 
-          </Link>
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
 };

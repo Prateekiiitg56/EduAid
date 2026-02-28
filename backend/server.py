@@ -360,7 +360,12 @@ def get_mcq_answer():
                     continue
 
                 # Calculate similarity between generated answer and each option
-                options_with_answer = [str(opt) for opt in options if opt] + [generated_answer]
+                filtered_options = [(i, str(opt)) for i, opt in enumerate(options) if opt]
+                if not filtered_options:
+                    continue
+                
+                option_texts = [opt for _, opt in filtered_options]
+                options_with_answer = option_texts + [generated_answer]
                 if len(options_with_answer) < 2:
                     continue
                     
@@ -371,8 +376,9 @@ def get_mcq_answer():
                 similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
                 max_similarity_index = similarities.argmax()
 
-                # Return the option with the highest similarity
-                best_option = options[max_similarity_index]
+                # Return the option with the highest similarity (map back to original index)
+                orig_index = filtered_options[max_similarity_index][0]
+                best_option = options[orig_index]
                 outputs.append(best_option)
             except Exception as e:
                 logger.error(f"Error processing MCQ answer: {e}")
@@ -835,7 +841,11 @@ def get_boolq_hard():
         harder_questions = []
         for q in generated:
             try:
-                harder_questions.append(make_question_harder(q))
+                if isinstance(q, dict):
+                    q["question"] = make_question_harder(q["question"])
+                    harder_questions.append(q)
+                else:
+                    harder_questions.append(make_question_harder(q))
             except Exception as e:
                 logger.warning(f"Failed to make question harder: {e}")
                 harder_questions.append(q)
@@ -978,8 +988,8 @@ def get_transcript():
             logger.error("yt-dlp is not installed or not in PATH")
             return jsonify({"error": "Transcript service unavailable (yt-dlp not found)"}), 503
 
-        # Find the VTT file
-        subtitle_files = glob.glob(os.path.join(subtitles_dir, "*.vtt"))
+        # Find the VTT file for this specific video
+        subtitle_files = glob.glob(os.path.join(subtitles_dir, f"{video_id}*.vtt"))
         if not subtitle_files:
             logger.warning(f"No subtitles found for video: {video_id}")
             return jsonify({"error": "No subtitles found for this video"}), 404
