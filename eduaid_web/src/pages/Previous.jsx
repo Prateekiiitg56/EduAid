@@ -1,6 +1,5 @@
 ﻿import React from "react";
 import { useNavigate } from "react-router-dom";
-import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 
 const difficultyColor = (d = "") => {
