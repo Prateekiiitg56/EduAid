@@ -17,17 +17,9 @@ from transformers import pipeline
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def _safe_nltk_download(pkg):
-    try:
-        nltk.data.find(pkg)
-    except LookupError:
-        try:
-            nltk.download(pkg, quiet=True, raise_on_error=False)
-        except Exception as e:
-            logger.warning(f"Failed to download {pkg}: {e}")
-
-_safe_nltk_download('corpora/stopwords')
-_safe_nltk_download('tokenizers/punkt_tab')
+from Generator.nltk_utils import safe_nltk_download
+safe_nltk_download('corpora/stopwords')
+safe_nltk_download('tokenizers/punkt_tab')
 
 from Generator import main
 from Generator.question_filters import make_question_harder

@@ -56,6 +56,8 @@ const Header = () => {
         {/* Mobile Hamburger */}
         <button
           onClick={() => setOpen(!open)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
           className="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5"
         >
           <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${open ? "rotate-45 translate-y-2" : ""}`} />

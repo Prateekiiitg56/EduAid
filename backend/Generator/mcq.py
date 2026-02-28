@@ -7,18 +7,10 @@ from nltk.corpus import stopwords
 from sense2vec import Sense2Vec
 from similarity.normalized_levenshtein import NormalizedLevenshtein
 import spacy
+from Generator.nltk_utils import safe_nltk_download
 
-def _safe_nltk_download(pkg):
-    try:
-        nltk.data.find(pkg)
-    except LookupError:
-        try:
-            nltk.download(pkg, quiet=True, raise_on_error=False)
-        except Exception:
-            pass
-
-_safe_nltk_download('corpora/brown')
-_safe_nltk_download('corpora/stopwords')
+safe_nltk_download('corpora/brown')
+safe_nltk_download('corpora/stopwords')
 
 def is_word_available(word, s2v_model):
     word = word.replace(" ", "_")

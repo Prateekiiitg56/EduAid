@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from "react";
+﻿import React from "react";
 import { Link } from "react-router-dom";
 import "../index.css";
 import logo from "../assets/aossie_logo_transparent.png";
@@ -116,7 +116,7 @@ const Landing = () => {
 
       {/* FOOTER */}
       <footer className="relative z-10 border-t border-white/[0.05] px-6 py-8 text-center text-[#4a5568] text-sm">
-        <p> 2026 EduAid  Built with  for learners everywhere</p>
+        <p> {new Date().getFullYear()} EduAid  Built with  for learners everywhere</p>
       </footer>
     </div>
   );

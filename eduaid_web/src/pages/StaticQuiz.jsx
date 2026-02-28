@@ -40,10 +40,11 @@ const Output = ({ questions: questionsProp }) => {
 
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qaPair) => {
-      const combinedOptions = qaPair.options
-        ? [...qaPair.options, qaPair.answer]
-        : [qaPair.answer];
-      return shuffleArray(combinedOptions);
+      const opts = Array.isArray(qaPair.options) ? [...qaPair.options] : [];
+      if (qaPair.answer && !opts.includes(qaPair.answer)) {
+        opts.push(qaPair.answer);
+      }
+      return shuffleArray(opts.filter(Boolean));
     });
   }, [qaPairs]);
 

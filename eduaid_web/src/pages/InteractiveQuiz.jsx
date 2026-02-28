@@ -70,9 +70,12 @@ const InteractiveQuiz = ({ questions: questionsProp }) => {
   }
 
   const q = questions[currentIndex];
-  const options = q.options ? [...q.options] : [];
+  const options = Array.isArray(q.options) && q.options.length > 0
+    ? [...q.options]
+    : [];
   if (q.answer && !options.includes(q.answer)) options.push(q.answer);
-  const correctIdx = options.indexOf(q.answer ?? options[q.correctAnswerIndex]);
+  const correctAnswer = q.answer ?? (q.correctAnswerIndex != null ? options[q.correctAnswerIndex] : undefined);
+  const correctIdx = correctAnswer != null ? options.indexOf(correctAnswer) : -1;
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   const handleSubmit = () => {

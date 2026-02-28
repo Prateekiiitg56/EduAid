@@ -18,7 +18,7 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const [docUrl, setDocUrl] = useState("");
-  const [isToggleOn, setIsToggleOn] = useState(0);
+  const [isToggleOn, setIsToggleOn] = useState(false);
   const [quizMode, setQuizMode] = useState("static");
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType") || "get_mcq"
@@ -51,6 +51,7 @@ const Text_Input = () => {
     if (diff !== "Easy Difficulty") {
       if (qType === "get_shortq") return "get_shortq_hard";
       if (qType === "get_mcq") return "get_mcq_hard";
+      if (qType === "get_boolq") return "get_boolq_hard";
     }
     return qType;
   };
@@ -62,9 +63,15 @@ const Text_Input = () => {
     if (docUrl) {
       try {
         const data = await apiClient.post("/get_content", { document_url: docUrl });
+        const content = data?.content || data;
+        if (!content) {
+          setText("Error: Document returned empty content");
+          return;
+        }
         setDocUrl("");
-        setText(data || "Error retrieving content");
+        setText(content);
       } catch (err) {
+        console.error("Doc fetch error:", err);
         setText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
@@ -82,7 +89,7 @@ const Text_Input = () => {
       const responseData = await apiClient.post(`/${endpoint}`, {
         input_text: text,
         max_questions: numQuestions,
-        use_mediawiki: isToggleOn,
+        use_mediawiki: isToggleOn ? 1 : 0,
       });
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
 
@@ -166,7 +173,8 @@ const Text_Input = () => {
 
       navigate("/quiz", { state: { mode: quizMode, questions: questionsArray } });
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error generating quiz:", err);
+      alert("Failed to generate quiz. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -211,7 +219,7 @@ const Text_Input = () => {
               className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#7600F2]/60 rounded-2xl p-5 text-white placeholder-[#4a5568] outline-none resize-none text-sm sm:text-base transition-colors duration-200"
             />
             <button
-              onClick={() => navigator.clipboard.readText().then((t) => setText(t))}
+              onClick={() => navigator.clipboard.readText().then((t) => setText(t)).catch(() => { /* clipboard access denied or unavailable */ })}
               title="Paste from clipboard"
               className="absolute top-3 right-3 p-2 rounded-lg text-[#4a5568] hover:text-[#a0aec0] hover:bg-white/[0.06] transition-all"
             >
@@ -300,7 +308,7 @@ const Text_Input = () => {
                 <div className="flex items-center gap-3">
                   <button onClick={() => setNumQuestions((n) => Math.max(1, n - 1))} className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.10] text-white font-bold hover:bg-white/10 transition-all"></button>
                   <span className="text-3xl font-black w-10 text-center">{numQuestions}</span>
-                  <button onClick={() => setNumQuestions((n) => n + 1)} className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.10] text-white font-bold hover:bg-white/10 transition-all">+</button>
+                  <button onClick={() => setNumQuestions((n) => Math.min(20, n + 1))} className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.10] text-white font-bold hover:bg-white/10 transition-all">+</button>
                 </div>
               </div>
 
@@ -354,7 +362,7 @@ const Text_Input = () => {
                   <div className="text-xs text-[#4a5568]">Enrich answers with Wikipedia data</div>
                 </div>
                 <button
-                  onClick={() => setIsToggleOn((v) => (v + 1) % 2)}
+                  onClick={() => setIsToggleOn((v) => !v)}
                   className={`relative w-11 h-6 rounded-full transition-all duration-300 ${isToggleOn ? "bg-[#7600F2]" : "bg-white/10"}`}
                 >
                   <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${isToggleOn ? "left-6" : "left-1"}`} />

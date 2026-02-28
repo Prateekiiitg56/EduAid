@@ -3,10 +3,14 @@ Pre-download all required HuggingFace models to local cache.
 Run this once before starting the server.
 """
 import os
-os.environ['HF_HOME'] = 'D:\\hf_cache'
-os.environ['TRANSFORMERS_CACHE'] = 'D:\\hf_cache\\transformers'
 
-print("Downloading models to D:\\hf_cache ...")
+# Use platform-agnostic cache directory (override with HF_HOME env var)
+_default_cache = os.path.join(os.path.expanduser('~'), '.cache', 'huggingface')
+HF_CACHE_DIR = os.environ.get('HF_HOME', _default_cache)
+os.environ['HF_HOME'] = HF_CACHE_DIR
+os.environ['TRANSFORMERS_CACHE'] = os.path.join(HF_CACHE_DIR, 'transformers')
+
+print(f"Downloading models to {HF_CACHE_DIR} ...")
 print("This may take 10-30 minutes depending on your internet speed.\n")
 
 from transformers import (
@@ -35,7 +39,7 @@ for model_type, model_name in models:
         print(f"  ✗ {model_name} failed: {e}\n")
 
 # Also check for QG and QAE models used in QuestionGenerator / AnswerPredictor
-import re, sys
+import re
 try:
     with open(os.path.join(os.path.dirname(__file__), 'Generator', 'main.py')) as f:
         content = f.read()
